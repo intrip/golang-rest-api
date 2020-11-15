@@ -45,6 +45,18 @@ func usersUpdate(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, user.RenderJSON())
 }
 
+func usersCreate(w http.ResponseWriter, req *http.Request) {
+	userJSON, _ := ioutil.ReadAll(req.Body)
+	userCreate := User{}
+	err := json.Unmarshal(userJSON, &userCreate)
+	if err != nil {
+		errorMsg(err, w, req)
+		return
+	}
+	users = append(users, userCreate)
+	fmt.Fprintf(w, userCreate.RenderJSON())
+}
+
 func notFound(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }

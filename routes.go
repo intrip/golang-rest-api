@@ -12,8 +12,8 @@ type route struct {
 	Handler func(w http.ResponseWriter, r *http.Request)
 }
 
-var rUser = regexp.MustCompile(`^/users/(\d+)$`)
 var rUsers = regexp.MustCompile(`^/users/?$`)
+var rUser = regexp.MustCompile(`^/users/(\d+)$`)
 
 var routes = []route{
 	route{
@@ -31,6 +31,11 @@ var routes = []route{
 		"POST",
 		usersUpdate,
 	},
+	route{
+		rUsers,
+		"POST",
+		usersCreate,
+	},
 }
 
 type routeHandler struct {
@@ -47,6 +52,7 @@ func (h routeHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	notFound(w, req)
 }
 
+// TODO use named capture group so that you can make a generic function to use
 func extractID(req *http.Request) uint {
 	matches := rUser.FindStringSubmatch(req.URL.Path)
 	id, _ := strconv.Atoi(matches[1])

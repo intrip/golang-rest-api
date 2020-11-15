@@ -15,9 +15,20 @@ var usersTest = []User{
 	User{1, "Jacopo", "jacopo@gmail.com"},
 }
 
+var ts *httptest.Server
+
+func setup() {
+	ts = httptest.NewServer(routeHandler{routes})
+	users = usersTest
+}
+
+func teardown() {
+	ts.Close()
+}
+
 func TestUsersIndex(t *testing.T) {
-	ts := httptest.NewServer(routeHandler{routes})
-	defer ts.Close()
+	setup()
+	defer teardown()
 
 	res, err := http.Get(fmt.Sprintf("%s/users", ts.URL))
 	if err != nil {
@@ -44,10 +55,12 @@ func TestUsersIndex(t *testing.T) {
 }
 
 func TestUsersIndexInvalidMethod(t *testing.T) {
-	ts := httptest.NewServer(routeHandler{routes})
-	defer ts.Close()
+	setup()
+	defer teardown()
 
-	res, err := http.Post(fmt.Sprintf("%s/users", ts.URL), "application/json", bytes.NewBuffer([]byte{}))
+	client := &http.Client{}
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/users", ts.URL), nil)
+	res, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,8 +70,6 @@ func TestUsersIndexInvalidMethod(t *testing.T) {
 	}
 }
 
-var user1 = User{1, "Jacopo", "jacopo@gmail.com"}
-
 var userTests = []struct {
 	id         uint
 	statusCode int
@@ -67,7 +78,7 @@ var userTests = []struct {
 	{
 		id:         1,
 		statusCode: http.StatusOK,
-		user:       user1,
+		user:       User{1, "Jacopo", "jacopo@gmail.com"},
 	},
 	{
 		id:         2,
@@ -76,9 +87,9 @@ var userTests = []struct {
 	},
 }
 
-func TestUserGet(t *testing.T) {
-	ts := httptest.NewServer(routeHandler{routes})
-	defer ts.Close()
+func TestUsersGet(t *testing.T) {
+	setup()
+	defer teardown()
 
 	for _, tt := range userTests {
 		res, err := http.Get(fmt.Sprintf("%s/users/%d", ts.URL, tt.id))
@@ -106,17 +117,49 @@ func TestUserGet(t *testing.T) {
 	}
 }
 
-func TestUserUpdate(t *testing.T) {
-	ts := httptest.NewServer(routeHandler{routes})
-	defer ts.Close()
+func TestUsersCreate(t *testing.T) {
+	setup()
+	defer teardown()
 
-	reqBody := map[string]string{
-		"name":  "new name",
-		"email": "new@email.com",
+	createUser := User{2, "new name", "new@email.com"}
+	createUserJSON, _ := json.Marshal(createUser)
+
+	resp, err := http.Post(fmt.Sprintf("%s/users", ts.URL), "application/json", bytes.NewBuffer(createUserJSON))
+	if err != nil {
+		log.Fatal(err)
 	}
-	reqBodyJSON, _ := json.Marshal(reqBody)
+	defer resp.Body.Close()
 
-	resp, err := http.Post(fmt.Sprintf("%s/users/%d", ts.URL, 1), "application/json", bytes.NewBuffer(reqBodyJSON))
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("got %v, want %v", resp.StatusCode, http.StatusOK)
+	}
+	userJSON, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	user := User{}
+	if len(userJSON) > 0 {
+		err = json.Unmarshal(userJSON, &user)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	if user != createUser {
+		t.Errorf("got %v, want %v", user, createUser)
+	}
+	if len(users) != 2 {
+		t.Errorf("users length is wrong: got %d, want %d", len(users), 2)
+	}
+}
+
+func TestUsersUpdate(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateUser := User{1, "new name", "new@email.com"}
+	updateUserJSON, _ := json.Marshal(updateUser)
+
+	resp, err := http.Post(fmt.Sprintf("%s/users/%d", ts.URL, updateUser.ID), "application/json", bytes.NewBuffer(updateUserJSON))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -136,8 +179,7 @@ func TestUserUpdate(t *testing.T) {
 			log.Fatal(err)
 		}
 	}
-	expectedUser := User{1, "new name", "new@email.com"}
-	if user != expectedUser {
-		t.Errorf("got %v, want %v", user, expectedUser)
+	if user != updateUser {
+		t.Errorf("got %v, want %v", user, updateUser)
 	}
 }
