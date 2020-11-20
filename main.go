@@ -19,8 +19,6 @@ func main() {
 }
 
 /* TODO
-*  - finish Crud for in memory API
-*     - DELETE
-*  - refactor: packages extraction etc
+*  - TODOs left
 *  - use a DB
  */

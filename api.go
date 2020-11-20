@@ -18,7 +18,7 @@ func usersIndex(w http.ResponseWriter, req *http.Request) {
 
 func usersGet(w http.ResponseWriter, req *http.Request) {
 	id := extractID(req)
-	user := getUser(id)
+	user, _ := getUser(id)
 	if user == nil {
 		notFound(w, req)
 		return
@@ -28,7 +28,7 @@ func usersGet(w http.ResponseWriter, req *http.Request) {
 
 func usersUpdate(w http.ResponseWriter, req *http.Request) {
 	id := extractID(req)
-	user := getUser(id)
+	user, _ := getUser(id)
 	if user == nil {
 		notFound(w, req)
 		return
@@ -55,6 +55,18 @@ func usersCreate(w http.ResponseWriter, req *http.Request) {
 	}
 	users = append(users, userCreate)
 	fmt.Fprintf(w, userCreate.RenderJSON())
+}
+
+func usersDelete(w http.ResponseWriter, req *http.Request) {
+	id := extractID(req)
+	user, idx := getUser(id)
+	if user == nil {
+		notFound(w, req)
+		return
+	}
+	users[idx] = users[len(users)-1]
+	users = users[:len(users)-1]
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func notFound(w http.ResponseWriter, req *http.Request) {

@@ -40,7 +40,7 @@ func TestUsersIndex(t *testing.T) {
 		log.Fatal(err)
 	}
 	if res.StatusCode != http.StatusOK {
-		t.Errorf("got %v, want %v", res.StatusCode, http.StatusOK)
+		t.Errorf("StatusCode = %v, want %v", res.StatusCode, http.StatusOK)
 	}
 	var users []User
 	err = json.Unmarshal(usersJSON, &users)
@@ -49,7 +49,7 @@ func TestUsersIndex(t *testing.T) {
 	}
 	for i, user := range users {
 		if user != usersTest[i] {
-			t.Errorf("got %v, want %v", users, usersTest)
+			t.Errorf("user = %v, want %v", users, usersTest)
 		}
 	}
 }
@@ -66,7 +66,7 @@ func TestUsersIndexInvalidMethod(t *testing.T) {
 	}
 	res.Body.Close()
 	if res.StatusCode != http.StatusNotFound {
-		t.Errorf("got %v, want %v", res.StatusCode, http.StatusNotFound)
+		t.Errorf("StatusCode = %v, want %v", res.StatusCode, http.StatusNotFound)
 	}
 }
 
@@ -102,7 +102,7 @@ func TestUsersGet(t *testing.T) {
 			log.Fatal(err)
 		}
 		if res.StatusCode != tt.statusCode {
-			t.Errorf("got %v, want %v", res.StatusCode, tt.statusCode)
+			t.Errorf("StatusCode = %v, want %v", res.StatusCode, tt.statusCode)
 		}
 		user := User{}
 		if len(userJSON) > 0 {
@@ -112,7 +112,7 @@ func TestUsersGet(t *testing.T) {
 			}
 		}
 		if user != tt.user {
-			t.Errorf("got %v, want %v", user, tt.user)
+			t.Errorf("user = %v, want %v", user, tt.user)
 		}
 	}
 }
@@ -131,7 +131,7 @@ func TestUsersCreate(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("got %v, want %v", resp.StatusCode, http.StatusOK)
+		t.Errorf("StatusCode = %v, want %v", resp.StatusCode, http.StatusOK)
 	}
 	userJSON, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -145,10 +145,10 @@ func TestUsersCreate(t *testing.T) {
 		}
 	}
 	if user != createUser {
-		t.Errorf("got %v, want %v", user, createUser)
+		t.Errorf("user =  %v, want %v", user, createUser)
 	}
 	if len(users) != 2 {
-		t.Errorf("users length is wrong: got %d, want %d", len(users), 2)
+		t.Errorf("len(users) = %d, want %d", len(users), 2)
 	}
 }
 
@@ -166,7 +166,7 @@ func TestUsersUpdate(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("got %v, want %v", resp.StatusCode, http.StatusOK)
+		t.Errorf("StatusCode = %v, want %v", resp.StatusCode, http.StatusOK)
 	}
 	userJSON, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -180,6 +180,36 @@ func TestUsersUpdate(t *testing.T) {
 		}
 	}
 	if user != updateUser {
-		t.Errorf("got %v, want %v", user, updateUser)
+		t.Errorf("user = %v, want %v", user, updateUser)
+	}
+}
+
+func TestUsersDelete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	id := usersTest[0].ID
+	client := &http.Client{}
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/users/%d", ts.URL, id), nil)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		t.Errorf("StatusCode = %v, want %v", resp.StatusCode, http.StatusNoContent)
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if len(respBody) > 0 {
+		t.Errorf("len(respBody) = %d, want %d", len(respBody), 0)
+	}
+
+	if len(users) > 0 {
+		t.Errorf("len(users) = %d, want %d", len(users), 0)
 	}
 }

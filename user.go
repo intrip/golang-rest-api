@@ -21,11 +21,11 @@ func (u User) RenderJSON() string {
 	return string(userJSON)
 }
 
-func getUser(id uint) *User {
-	for _, u := range users {
+func getUser(id uint) (*User, int) {
+	for i, u := range users {
 		if u.ID == uint(id) {
-			return &u
+			return &u, i
 		}
 	}
-	return nil
+	return nil, 0
 }

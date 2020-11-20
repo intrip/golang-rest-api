@@ -18,6 +18,11 @@ var rUser = regexp.MustCompile(`^/users/(\d+)$`)
 var routes = []route{
 	route{
 		rUsers,
+		"POST",
+		usersCreate,
+	},
+	route{
+		rUsers,
 		"GET",
 		usersIndex,
 	},
@@ -32,9 +37,9 @@ var routes = []route{
 		usersUpdate,
 	},
 	route{
-		rUsers,
-		"POST",
-		usersCreate,
+		rUser,
+		"DELETE",
+		usersDelete,
 	},
 }
 
